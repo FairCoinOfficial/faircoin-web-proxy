@@ -1,0 +1,1 @@
+# faircoin-web-proxy
