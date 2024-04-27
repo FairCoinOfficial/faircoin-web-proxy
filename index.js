@@ -30,72 +30,65 @@ function removeFairCoin(html) {
   return $.html();
 }
 
-// Route handlers
+// Extract common code into a function
+async function fetchAndModifyHtml(url) {
+  try {
+    const response = await axios.get(url);
+    let modifiedHtml = removeFairCoin(response.data);
+
+    // Integrate the JavaScript script
+    modifiedHtml += `
+        <script>
+          window.addEventListener('load', () => {
+            window.addEventListener('click', (event) => {
+    event.stopImmediatePropagation();
+}, true);
+          });
+        </script>
+      `;
+
+    return modifiedHtml;
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error fetching content");
+  }
+}
+
 app.get("/", async (req, res) => {
   try {
-    // Fetch content from your Framer site
-    const response = await axios.get(framerSiteUrl);
-    let modifiedHtml = removeFairCoin(response.data);
-
-    // Integrate the JavaScript script
-    modifiedHtml += `
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    // Find all links and prevent their default behavior
-                    var links = document.querySelectorAll("a");
-                    links.forEach(function(link) {
-                        link.addEventListener("click", function(event) {
-                          console.log("WORKS?");
-                            event.preventDefault(); // Prevent the default behavior
-                            var href = link.getAttribute("href");
-                            // Modify the URL as desired (e.g., remove "/FairCoin")
-                            var newHref = href.replace(/\\/FairCoin/g, '');
-                            window.location.href = newHref;
-                        });
-                    });
-                });
-            </script>
-        `;
-
-    res.send(modifiedHtml); // Send the modified HTML with script
+    const modifiedHtml = await fetchAndModifyHtml(framerSiteUrl);
+    res.send(modifiedHtml);
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error fetching content");
+    res.status(500).send(error.message);
   }
 });
 
-app.get("/wallet", async (req, res) => {
+app.get("/:slug", async (req, res) => {
   try {
-    // Fetch content from your Framer site
-    const response = await axios.get("https://about.peable.co/FairCoin/wallet");
-    let modifiedHtml = removeFairCoin(response.data);
-
-    // Integrate the JavaScript script
-    modifiedHtml += `
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    // Find all links and prevent their default behavior
-                    var links = document.querySelectorAll("a");
-                    links.forEach(function(link) {
-                        link.addEventListener("click", function(event) {
-                          console.log("WORKS?");
-                            event.preventDefault(); // Prevent the default behavior
-                            var href = link.getAttribute("href");
-                            // Modify the URL as desired (e.g., remove "/FairCoin")
-                            var newHref = href.replace(/\\/FairCoin/g, '');
-                            window.location.href = newHref;
-                        });
-                    });
-                });
-            </script>
-        `;
-
-    res.send(modifiedHtml); // Send the modified HTML with script
+    const slug = req.params.slug;
+    const modifiedHtml = await fetchAndModifyHtml(
+      `https://about.peable.co/FairCoin/${slug}`
+    );
+    res.send(modifiedHtml);
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error fetching content");
+    res.status(500).send(error.message);
   }
 });
+
+app.get("/:slug1/:slug2", async (req, res) => {
+  try {
+    const slug1 = req.params.slug1;
+    const slug2 = req.params.slug2;
+    const modifiedHtml = await fetchAndModifyHtml(
+      `https://about.peable.co/FairCoin/${slug1}/${slug2}`
+    );
+    res.send(modifiedHtml);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.use("/public/assets", express.static(__dirname + "/public/assets"));
 
 // Start the server
 app.listen(port, () => {
