@@ -11,6 +11,9 @@ const framerSiteUrl = "https://about.peable.co/FairCoin";
 function removeFairCoin(html) {
   const $ = cheerio.load(html);
 
+  // Change the favicon
+  $("link[rel='icon']").attr("href", "/public/assets/favicon.ico");
+
   // Remove any rel="alternate" meta tags
   $("meta[rel='alternate']").remove();
 
